@@ -54,11 +54,11 @@
 <div class="app-container">
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2>📱 Mini-Apps By Twixoff</h2>
+            <h2>ߓ Mini-Apps By Twixoff</h2>
             <p>Автообновление из GitHub</p>
         </div>
-        <div class="update-status" id="updateStatus">📡 Загрузка...</div>
-        <button class="refresh-btn" id="refreshBtn">🔄 Обновить</button>
+        <div class="update-status" id="updateStatus">ߓ Загрузка...</div>
+        <button class="refresh-btn" id="refreshBtn">ߔ Обновить</button>
         <div class="service-list" id="serviceList"></div>
     </div>
     <div class="overlay" id="overlay"></div>
@@ -71,10 +71,10 @@
 
 <div class="fullscreen-banner" id="banner">
     <div class="banner-content">
-        <h1>📸 Twixoff MINI-APPS</h1>
+        <h1>ߓ Twixoff MINI-APPS</h1>
         <p style="text-align:center; opacity:0.7;">Скриншоты создаются автоматически — нажми на любое приложение</p>
         <div class="preview-grid" id="previewGrid"></div>
-        <button class="close-banner" id="closeBanner">🚀 Начать</button>
+        <button class="close-banner" id="closeBanner">ߚ Начать</button>
     </div>
 </div>
 
@@ -82,7 +82,10 @@
     const GITHUB_USER = "OinkTechLtd";
     const GITHUB_REPO = "Mini-Apps";
     const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/`;
-    const RAW_URL = `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO}/blob/main/`;
+    // Для просмотра в iframe используем htmlpreview
+    const PREVIEW_URL = `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO}/blob/main/`;
+    // Для скриншотов используем raw (чистый HTML)
+    const RAW_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/`;
     
     let apps = [];
     let activeId = null;
@@ -103,7 +106,7 @@
     // Загрузка списка приложений
     async function loadAppsList() {
         try {
-            updateStatus.innerHTML = '📡 Загрузка...';
+            updateStatus.innerHTML = 'ߓ Загрузка...';
             const response = await fetch(API_URL);
             if (!response.ok) throw new Error(`GitHub API: ${response.status}`);
             const files = await response.json();
@@ -112,14 +115,21 @@
             const newApps = htmlFiles.map(file => {
                 let name = file.name.replace('.html', '').replace(/[-_]/g, ' ');
                 name = name.replace(/\b\w/g, l => l.toUpperCase());
-                let icon = '📱';
+                let icon = 'ߓ';
                 const lower = name.toLowerCase();
-                if (lower.includes('кино') || lower.includes('player')) icon = '🎬';
+                if (lower.includes('кино') || lower.includes('player')) icon = 'ߎ';
                 else if (lower.includes('погод')) icon = '⛅';
-                else if (lower.includes('search')) icon = '🔍';
-                else if (lower.includes('video')) icon = '🎥';
-                else if (lower.includes('coder')) icon = '💻';
-                return { id: file.name.replace('.html', ''), name, url: RAW_URL + file.name, icon, filename: file.name };
+                else if (lower.includes('search')) icon = 'ߔ';
+                else if (lower.includes('video')) icon = 'ߎ';
+                else if (lower.includes('coder')) icon = 'ߒ';
+                return { 
+                    id: file.name.replace('.html', ''), 
+                    name, 
+                    previewUrl: PREVIEW_URL + file.name,  // для показа в iframe
+                    rawUrl: RAW_URL + file.name,          // для скриншотов
+                    icon, 
+                    filename: file.name 
+                };
             });
             apps = newApps;
             localStorage.setItem('apps_cache', JSON.stringify(apps));
@@ -127,13 +137,13 @@
             return true;
         } catch(e) {
             const cached = localStorage.getItem('apps_cache');
-            if (cached) { apps = JSON.parse(cached); updateStatus.innerHTML = `📦 Кэш (${apps.length})`; return true; }
+            if (cached) { apps = JSON.parse(cached); updateStatus.innerHTML = `ߓ Кэш (${apps.length})`; return true; }
             updateStatus.innerHTML = '❌ Ошибка';
             return false;
         }
     }
     
-    // Создание скриншота через загрузку HTML
+    // Создание скриншота через загрузку RAW HTML
     async function createScreenshot(url) {
         return new Promise(async (resolve) => {
             try {
@@ -180,7 +190,7 @@
     
     // Отображение скриншотов
     async function renderScreenshots() {
-        if (!apps.length) { previewGrid.innerHTML = '<div style="text-align:center; padding:40px;">📭 Нет приложений</div>'; return; }
+        if (!apps.length) { previewGrid.innerHTML = '<div style="text-align:center; padding:40px;">ߓ Нет приложений</div>'; return; }
         previewGrid.innerHTML = '';
         
         for (const app of apps) {
@@ -196,10 +206,10 @@
             const img = card.querySelector('img');
             const loading = card.querySelector('.preview-loading');
             
-            let screenshot = screenshotCache[app.url];
+            let screenshot = screenshotCache[app.rawUrl];
             if (!screenshot) {
-                screenshot = await createScreenshot(app.url);
-                if (screenshot) screenshotCache[app.url] = screenshot;
+                screenshot = await createScreenshot(app.rawUrl);
+                if (screenshot) screenshotCache[app.rawUrl] = screenshot;
             }
             if (screenshot) { img.src = screenshot; img.style.display = 'block'; loading.style.display = 'none'; }
             else { loading.innerHTML = `${app.icon}<br>${app.name}<br><span style="font-size:0.7rem;">Скриншот не создан</span>`; }
@@ -208,7 +218,7 @@
     
     function loadApp(id) {
         const app = apps.find(a => a.id === id);
-        if (app) { mainFrame.src = app.url; activeId = app.id; updateActiveStyles(); }
+        if (app) { mainFrame.src = app.previewUrl; activeId = app.id; updateActiveStyles(); }
     }
     
     function updateActiveStyles() {
@@ -250,11 +260,11 @@
     }
     
     async function refreshAll() {
-        refreshBtn.innerHTML = '🔄 Загрузка...';
+        refreshBtn.innerHTML = 'ߔ Загрузка...';
         screenshotCache = {};
         await loadAppsList();
         if (apps.length) { renderSidebar(); renderMobileNav(); if (bannerDiv.style.display !== 'none') await renderScreenshots(); if (!activeId) loadApp(apps[0].id); }
-        refreshBtn.innerHTML = '🔄 Обновить';
+        refreshBtn.innerHTML = 'ߔ Обновить';
     }
     
     // Автообновление при коммитах
@@ -286,8 +296,8 @@
         closeBannerBtn.addEventListener('click', closeBanner);
         
         console.log('%c✅ ГОТОВО! СКРИНШОТЫ РАБОТАЮТ!', 'color: #10b981; font-size: 16px; font-weight: bold');
-        console.log('%c📸 Приложения: ' + apps.length, 'color: #60a5fa');
-        console.log('%c🔄 Автообновление каждую минуту', 'color: #c084fc');
+        console.log('%cߓ Приложения: ' + apps.length, 'color: #60a5fa');
+        console.log('%cߔ Автообновление каждую минуту', 'color: #c084fc');
     }
     
     init();
