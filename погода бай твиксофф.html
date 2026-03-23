@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherAlert - Прогноз погоды с уведомлениями</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Анимированный фон */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 25% 25%, #4CAF50 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, #00BCD4 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, #9C27B0 0%, transparent 50%);
+            filter: blur(120px);
+            opacity: 0.4;
+            animation: backgroundShift 12s ease-in-out infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes backgroundShift {
+            0% { transform: scale(1) rotate(0deg); }
+            100% { transform: scale(1.1) rotate(8deg); }
+        }
+
+        /* Контейнер для содержимого */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            z-index: 10;
+            position: relative;
+        }
+
+        /* Шапка */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4CAF50, #00BCD4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 0 35px rgba(76, 175, 80, 0.6);
+        }
+
+        .header p {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 20px;
+        }
+
+        /* Погода */
+        .weather-container {
+            background: rgba(30, 30, 30, 0.7);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 28px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .weather-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #00BCD4;
+            text-align: center;
+        }
+
+        .weather-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+        }
+
+        .current-weather {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .weather-icon {
+            font-size: 64px;
+            margin-bottom: 10px;
+        }
+
+        .weather-temp {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .weather-desc {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .weather-location {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .weather-details {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+
+        .weather-detail {
+            text-align: center;
+        }
+
+        .weather-detail-value {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .weather-detail-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .weather-alerts {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .alerts-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #4CAF50;
+            text-align: center;
+        }
+
+        .alert-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-icon {
+            font-size: 24px;
+        }
+
+        .alert-rain { color: #00BCD4; }
+        .alert-snow { color: #ffffff; }
+        .alert-storm { color: #FF9800; }
+        .alert-hail { color: #9C27B0; }
+        .alert-warning { color: #F44336; }
+
+        .no-alerts {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Кнопки */
+        .buttons-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00BCD4, #4CAF50);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Модальное окно для уведомлений */
+        .alert-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .alert-content {
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            animation: modalAppear 0.5s ease-out;
+        }
+
+        @keyframes modalAppear {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .alert-modal-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .alert-modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #F44336;
+        }
+
+        .alert-modal-message {
+            font-size: 18px;
+            margin-bottom: 25px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .alert-modal-btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #00BCD4, #4CAF50);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        /* Футер */
+        .footer {
+            text-align: center;
+            padding: 30px 0;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .weather-content {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 32px;
+            }
+            
+            .buttons-container {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .weather-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Шапка -->
+    <div class="header">
+        <h1>WeatherAlert</h1>
+        <p>Точный прогноз погоды с уведомлениями о неблагоприятных условиях</p>
+        
+        <div class="buttons-container">
+            <button class="btn btn-primary" onclick="getWeatherByLocation()">Мое местоположение</button>
+            <button class="btn btn-secondary" onclick="getWeatherByCity('Moscow')">Москва</button>
+            <button class="btn btn-secondary" onclick="getWeatherByCity('Saint Petersburg')">Санкт-Петербург</button>
+            <button class="btn btn-secondary" onclick="getWeatherByCity('Novosibirsk')">Новосибирск</button>
+        </div>
+    </div>
+
+    <!-- Погода -->
+    <div class="weather-container">
+        <h2 class="weather-title">Текущая погода</h2>
+        <div class="weather-content">
+            <div class="current-weather">
+                <div class="weather-icon" id="weatherIcon">⛅</div>
+                <div class="weather-temp" id="weatherTemp">--°C</div>
+                <div class="weather-desc" id="weatherDesc">Нажмите кнопку для получения погоды</div>
+                <div class="weather-location" id="weatherLocation">--</div>
+                <div class="weather-details">
+                    <div class="weather-detail">
+                        <div class="weather-detail-value" id="weatherHumidity">--%</div>
+                        <div class="weather-detail-label">Влажность</div>
+                    </div>
+                    <div class="weather-detail">
+                        <div class="weather-detail-value" id="weatherWind">-- м/с</div>
+                        <div class="weather-detail-label">Ветер</div>
+                    </div>
+                    <div class="weather-detail">
+                        <div class="weather-detail-value" id="weatherPressure">-- гПа</div>
+                        <div class="weather-detail-label">Давление</div>
+                    </div>
+                </div>
+            </div>
+            <div class="weather-alerts">
+                <div class="alerts-title">Погодные уведомления</div>
+                <div id="weatherAlerts" class="no-alerts">Нет активных предупреждений</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Модальное окно для уведомлений -->
+    <div id="alertModal" class="alert-modal">
+        <div class="alert-content">
+            <div class="alert-modal-icon" id="alertModalIcon">⚠️</div>
+            <div class="alert-modal-title" id="alertModalTitle">Погодное предупреждение</div>
+            <div class="alert-modal-message" id="alertModalMessage">Сообщение о погодных условиях</div>
+            <button class="alert-modal-btn" onclick="closeAlertModal()">Понятно</button>
+        </div>
+    </div>
+
+    <!-- Футер -->
+    <div class="footer">
+        WeatherAlert - Прогноз погоды с уведомлениями
+    </div>
+</div>
+
+<script>
+    // Используем бесплатный погодный API без ключа
+    const WEATHER_API_URL = 'https://api.open-meteo.com/v1/forecast';
+    
+    // Переменная для хранения предыдущих уведомлений
+    let previousAlerts = [];
+
+    // Функция для получения погоды по местоположению
+    async function getWeatherByLocation() {
+        updateWeatherUI("Определение местоположения...");
+        
+        if (!navigator.geolocation) {
+            updateWeatherUI("Геолокация не поддерживается вашим браузером");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                await fetchWeatherByCoords(lat, lon);
+            },
+            async (error) => {
+                console.error('Ошибка геолокации:', error);
+                updateWeatherUI("Не удалось определить местоположение. Разрешите доступ к геолокации или выберите город вручную.");
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
+            }
+        );
+    }
+
+    // Функция для получения погоды по координатам
+    async function fetchWeatherByCoords(lat, lon) {
+        try {
+            updateWeatherUI("Получение данных о погоде...");
+            
+            // Получаем данные о погоде
+            const response = await fetch(
+                `${WEATHER_API_URL}?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,snowfall,weather_code,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m&timezone=auto`
+            );
+            
+            if (!response.ok) {
+                throw new Error('Ошибка получения данных о погоде');
+            }
+            
+            const data = await response.json();
+            
+            // Получаем название города по координатам
+            const cityName = await getCityName(lat, lon);
+            
+            displayWeatherData(data, cityName);
+            
+        } catch (error) {
+            console.error('Ошибка получения погоды:', error);
+            updateWeatherUI("Не удалось получить данные о погоде. Проверьте подключение к интернету.");
+        }
+    }
+
+    // Функция для получения погоды по названию города
+    async function getWeatherByCity(city) {
+        try {
+            updateWeatherUI(`Поиск города ${city}...`);
+            
+            // Сначала получаем координаты города
+            const geoResponse = await fetch(
+                `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=ru&format=json`
+            );
+            
+            if (!geoResponse.ok) {
+                throw new Error('Ошибка поиска города');
+            }
+            
+            const geoData = await geoResponse.json();
+            
+            if (!geoData.results || geoData.results.length === 0) {
+                throw new Error('Город не найден');
+            }
+            
+            const location = geoData.results[0];
+            await fetchWeatherByCoords(location.latitude, location.longitude);
+            
+        } catch (error) {
+            console.error('Ошибка получения погоды по городу:', error);
+            updateWeatherUI("Не удалось найти город или получить данные о погоде.");
+        }
+    }
+
+    // Функция для получения названия города по координатам
+    async function getCityName(lat, lon) {
+        try {
+            const response = await fetch(
+                `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=ru&format=json`
+            );
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.results && data.results.length > 0) {
+                    return data.results[0].name;
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка получения названия города:', error);
+        }
+        
+        return `Широта: ${lat.toFixed(2)}, Долгота: ${lon.toFixed(2)}`;
+    }
+
+    // Функция для отображения данных о погоде
+    function displayWeatherData(data, cityName) {
+        const current = data.current;
+        
+        const temp = Math.round(current.temperature_2m);
+        const apparentTemp = Math.round(current.apparent_temperature);
+        const humidity = current.relative_humidity_2m;
+        const windSpeed = current.wind_speed_10m;
+        const pressure = Math.round(current.pressure_msl);
+        const weatherCode = current.weather_code;
+        
+        const weatherIcon = document.getElementById('weatherIcon');
+        const weatherTemp = document.getElementById('weatherTemp');
+        const weatherDesc = document.getElementById('weatherDesc');
+        const weatherLocation = document.getElementById('weatherLocation');
+        const weatherHumidity = document.getElementById('weatherHumidity');
+        const weatherWind = document.getElementById('weatherWind');
+        const weatherPressure = document.getElementById('weatherPressure');
+
+        // Обновляем основную информацию
+        weatherTemp.textContent = `${temp}°C`;
+        weatherDesc.textContent = `${getWeatherDescription(weatherCode)} (ощущается как ${apparentTemp}°C)`;
+        weatherLocation.textContent = cityName;
+        weatherHumidity.textContent = `${humidity}%`;
+        weatherWind.textContent = `${windSpeed} м/с`;
+        weatherPressure.textContent = `${pressure} гПа`;
+        weatherIcon.textContent = getWeatherIcon(weatherCode);
+
+        // Проверяем наличие неблагоприятных погодных условий
+        const alerts = checkWeatherAlerts(current, weatherCode);
+        displayWeatherAlerts(alerts);
+        showAlertModal(alerts);
+    }
+
+    // Функция для обновления интерфейса
+    function updateWeatherUI(message) {
+        const weatherDesc = document.getElementById('weatherDesc');
+        weatherDesc.textContent = message;
+    }
+
+    // Функция для получения описания погоды по коду
+    function getWeatherDescription(code) {
+        const weatherCodes = {
+            0: 'Ясно',
+            1: 'Преимущественно ясно',
+            2: 'Переменная облачность',
+            3: 'Пасмурно',
+            45: 'Туман',
+            48: 'Туман с инеем',
+            51: 'Легкая морось',
+            53: 'Умеренная морось',
+            55: 'Сильная морось',
+            56: 'Легкая ледяная морось',
+            57: 'Сильная ледяная морось',
+            61: 'Небольшой дождь',
+            63: 'Умеренный дождь',
+            65: 'Сильный дождь',
+            66: 'Легкий ледяной дождь',
+            67: 'Сильный ледяной дождь',
+            71: 'Небольшой снег',
+            73: 'Умеренный снег',
+            75: 'Сильный снег',
+            77: 'Снежные зерна',
+            80: 'Небольшие ливни',
+            81: 'Умеренные ливни',
+            82: 'Сильные ливни',
+            85: 'Небольшие снегопады',
+            86: 'Сильные снегопады',
+            95: 'Гроза',
+            96: 'Гроза с небольшим градом',
+            99: 'Гроза с сильным градом'
+        };
+        
+        return weatherCodes[code] || 'Неизвестно';
+    }
+
+    // Функция для получения иконки погоды по коду
+    function getWeatherIcon(code) {
+        if (code === 0) return '☀️';
+        if (code <= 2) return '🌤️';
+        if (code <= 3) return '☁️';
+        if (code <= 48) return '🌫️';
+        if (code <= 67) return '🌧️';
+        if (code <= 77) return '❄️';
+        if (code <= 82) return '🌧️';
+        if (code <= 86) return '❄️';
+        if (code <= 99) return '⛈️';
+        return '🌤️';
+    }
+
+    // Функция для проверки неблагоприятных погодных условий
+    function checkWeatherAlerts(current, weatherCode) {
+        const alerts = [];
+        const temp = current.temperature_2m;
+        const windSpeed = current.wind_speed_10m;
+        const rain = current.rain || 0;
+        const showers = current.showers || 0;
+        const snowfall = current.snowfall || 0;
+
+        // Проверяем на дождь
+        if (rain > 0 || showers > 0) {
+            alerts.push({
+                type: 'rain',
+                message: 'Ожидается дождь. Возьмите зонт!',
+                icon: '🌧️',
+                title: 'Дождь'
+            });
+        }
+
+        // Проверяем на снег
+        if (snowfall > 0) {
+            alerts.push({
+                type: 'snow',
+                message: 'Ожидается снег. Будьте осторожны на дорогах!',
+                icon: '❄️',
+                title: 'Снег'
+            });
+        }
+
+        // Проверяем на грозу
+        if (weatherCode >= 95) {
+            alerts.push({
+                type: 'storm',
+                message: 'Ожидается гроза. Оставайтесь в помещении!',
+                icon: '⛈️',
+                title: 'Гроза'
+            });
+        }
+
+        // Проверяем на сильный ветер
+        if (windSpeed > 15) {
+            alerts.push({
+                type: 'warning',
+                message: 'Сильный ветер. Будьте осторожны!',
+                icon: '💨',
+                title: 'Сильный ветер'
+            });
+        }
+
+        // Проверяем на экстремальные температуры
+        if (temp < -10) {
+            alerts.push({
+                type: 'warning',
+                message: 'Сильный мороз. Одевайтесь теплее!',
+                icon: '🥶',
+                title: 'Сильный мороз'
+            });
+        } else if (temp > 35) {
+            alerts.push({
+                type: 'warning',
+                message: 'Сильная жара. Пейте больше воды!',
+                icon: '🥵',
+                title: 'Сильная жара'
+            });
+        }
+
+        return alerts;
+    }
+
+    // Функция для отображения погодных уведомлений
+    function displayWeatherAlerts(alerts) {
+        const weatherAlerts = document.getElementById('weatherAlerts');
+        
+        if (alerts.length === 0) {
+            weatherAlerts.innerHTML = '<div class="no-alerts">Нет активных предупреждений</div>';
+            return;
+        }
+
+        let alertsHTML = '';
+        alerts.forEach(alert => {
+            alertsHTML += `
+                <div class="alert-item">
+                    <div class="alert-icon ${'alert-' + alert.type}">${alert.icon}</div>
+                    <div>${alert.message}</div>
+                </div>
+            `;
+        });
+        
+        weatherAlerts.innerHTML = alertsHTML;
+    }
+
+    // Функция для показа модального окна с уведомлениями
+    function showAlertModal(alerts) {
+        // Проверяем, есть ли новые уведомления
+        const newAlerts = alerts.filter(alert => 
+            !previousAlerts.some(prevAlert => 
+                prevAlert.type === alert.type && prevAlert.message === alert.message
+            )
+        );
+        
+        if (newAlerts.length === 0) {
+            return; // Нет новых уведомлений
+        }
+        
+        // Сохраняем текущие уведомления для следующей проверки
+        previousAlerts = [...alerts];
+        
+        // Показываем модальное окно для первого нового уведомления
+        const alert = newAlerts[0];
+        const modal = document.getElementById('alertModal');
+        const modalIcon = document.getElementById('alertModalIcon');
+        const modalTitle = document.getElementById('alertModalTitle');
+        const modalMessage = document.getElementById('alertModalMessage');
+        
+        modalIcon.textContent = alert.icon;
+        modalTitle.textContent = alert.title;
+        modalMessage.textContent = alert.message;
+        
+        modal.style.display = 'flex';
+        
+        // Автоматически закрываем модальное окно через 10 секунд
+        setTimeout(() => {
+            if (modal.style.display === 'flex') {
+                closeAlertModal();
+            }
+        }, 10000);
+    }
+
+    // Функция для закрытия модального окна
+    function closeAlertModal() {
+        document.getElementById('alertModal').style.display = 'none';
+    }
+
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        // Автоматически пытаемся получить погоду по местоположению
+        setTimeout(() => {
+            getWeatherByLocation();
+        }, 1000);
+    });
+</script>
+</body>
+</html>
