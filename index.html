@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>Mini-Apps — ФИНАЛЬНАЯ ВЕРСИЯ</title>
+    <title>Mini-Apps — by Twixoff</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0c10; overflow: hidden; height: 100vh; width: 100vw; position: fixed; }
@@ -54,7 +54,7 @@
 <div class="app-container">
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2>📱 Mini-Apps</h2>
+            <h2>📱 Mini-Apps By Twixoff</h2>
             <p>Автообновление из GitHub</p>
         </div>
         <div class="update-status" id="updateStatus">📡 Загрузка...</div>
@@ -71,7 +71,7 @@
 
 <div class="fullscreen-banner" id="banner">
     <div class="banner-content">
-        <h1>📸 ВАШИ MINI-APPS</h1>
+        <h1>📸 Twixoff MINI-APPS</h1>
         <p style="text-align:center; opacity:0.7;">Скриншоты создаются автоматически — нажми на любое приложение</p>
         <div class="preview-grid" id="previewGrid"></div>
         <button class="close-banner" id="closeBanner">🚀 Начать</button>
@@ -82,7 +82,7 @@
     const GITHUB_USER = "OinkTechLtd";
     const GITHUB_REPO = "Mini-Apps";
     const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/`;
-    const RAW_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/`;
+    const RAW_URL = `https://rawcdn.githack.com/${GITHUB_USER}/${GITHUB_REPO}/main/`;
     
     let apps = [];
     let activeId = null;
